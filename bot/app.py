@@ -1,6 +1,9 @@
+import asyncio
 import logging
+
 from telegram_bot import TelegramBot
 from torrent import TorrentService
+from api import server
 
 # Enable logging
 logging.basicConfig(
@@ -10,11 +13,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main() -> None:
+async def main() -> None:
     with TorrentService() as torrent_service:
         bot = TelegramBot(torrent_service)
-        bot.run()
+        async with bot.application:
+            await bot.start()
+            await server.serve()
+            await bot.stop()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

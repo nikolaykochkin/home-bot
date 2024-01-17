@@ -5,7 +5,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 
 from torrent import TorrentService
 
-from config import TG_TOKEN
+from config import tg_token
 
 # set higher logging level for httpx to avoid all GET and POST requests being logged
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -18,7 +18,7 @@ class TelegramBot:
         self.torrent_service = torrent_service
 
         # Create the Application and pass it your bot's token.
-        self.application = Application.builder().token(TG_TOKEN).build()
+        self.application = Application.builder().token(tg_token).build()
 
         # on different commands - answer in Telegram
         self.application.add_handler(CommandHandler("start", self.__start))
@@ -28,10 +28,16 @@ class TelegramBot:
         # on non command i.e message - echo the message on Telegram
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.__echo))
 
-    def run(self) -> None:
+    async def start(self) -> None:
         """Run the bot until the user presses Ctrl-C"""
         logger.info("Running bot application")
-        self.application.run_polling(allowed_updates=Update.ALL_TYPES)
+        await self.application.initialize()
+        await self.application.start()
+        await self.application.updater.start_polling()
+
+    async def stop(self) -> None:
+        await self.application.updater.stop()
+        await self.application.stop()
         logger.info("Bot application stopped")
 
     async def __start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
